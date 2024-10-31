@@ -1,0 +1,28 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo "Installing dependencies..."
+      - yum install -y openssh  # Ensure SSH is available
+
+  pre_build:
+    commands:
+      - echo "Setting up SSH configuration..."
+      # Retrieve the SSH private key securely from Secrets Manager or SSM
+      - export EC2_SSH_KEY=$(aws secretsmanager get-secret-value --secret-id my-ec2-ssh-key --query SecretString --output text)
+      - echo "$EC2_SSH_KEY" > /tmp/my_key.pem
+      - chmod 400 /tmp/my_key.pem  # Secure the key file
+
+  build:
+    commands:
+      - echo "Deploying to EC2 instance..."
+      # SSH into the instance and run deployment commands
+      - ssh -i /tmp/my_key.pem ec2-user@${EC2_INSTANCE_IP} 'bash -s' < deploy_script.sh
+      # Alternatively, use scp to copy files if needed
+      - scp -i /tmp/my_key.pem my_app.zip ec2-user@${EC2_INSTANCE_IP}:/home/ec2-user/
+      - ssh -i /tmp/my_key.pem ec2-user@${EC2_INSTANCE_IP} "unzip -o /home/ec2-user/my_app.zip -d /var/www/html"
+
+artifacts:
+  files:
+    - '**/*'

@@ -1,0 +1,14 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - echo "Installing build dependencies..."
+      - ./gradlew build  # Adjust for your build tool (Maven, npm, etc.)
+  build:
+    commands:
+      - echo "Building application..."
+      - ./gradlew build  # Adjust if using npm or Maven
+artifacts:
+  files:
+    - build/**  # Adjust to your application output directory

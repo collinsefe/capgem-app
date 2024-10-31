@@ -1,0 +1,54 @@
+version: 0.2
+
+env:
+  variables:
+    DOCKER_IMAGE: registry.example.com/your_project/app_name
+    DOCKER_TAG: $CODEBUILD_RESOLVED_SOURCE_VERSION  # Use commit SHA or a pipeline variable
+
+phases:
+  install:
+    commands:
+      - echo "Setting up Docker environment..."
+  pre_build:
+    commands:
+      - echo "Logging in to Docker registry..."
+      - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+  build:
+    commands:
+      - echo "Building Docker image..."
+      - docker build -t $DOCKER_IMAGE:$DOCKER_TAG .
+      - docker push $DOCKER_IMAGE:$DOCKER_TAG
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+      golang: 1.14
+    commands:
+      - "curl -s -qL -o terraform.zip https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip"
+      - "unzip -o terraform.zip"
+  
+  build:
+    commands:
+      - "cd ${CODEBUILD_SRC_DIR}/${CODE_SRC_DIR}"
+      - "echo ## TERRAFORM INIT : Initialize the Terraform Workspace"
+      - "terraform init"
+      - "echo ## VALIDATION : Starting ..."
+      - "mkdir -p ${CODEBUILD_SRC_DIR}/reports"
+      - "/bin/bash ${CODEBUILD_SRC_DIR}/${SCRIPT_DIR}/tf_ssp_validation.sh ${SKIPVALIDATIONFAILURE} ${ENABLE_TFVALIDATE} ${ENABLE_TFFORMAT} ${ENABLE_TFCHECKOV} ${ENABLE_TFSEC}"
+      - "cp checkov.xml ${CODEBUILD_SRC_DIR}/reports/checkov.xml"
+      - "cp tfsec-junit.xml ${CODEBUILD_SRC_DIR}/reports/tfsec-junit.xml"
+artifacts:
+  files:
+    - '**/*'
+reports:
+  checkov-reports:
+    files:
+      - "./reports/checkov.xml"
+    file-format: "JUNITXML"
+  tfsec-reports:
+    files:
+      - "./reports/tfsec-junit.xml"
+    file-format: "JUNITXML"
+
+
