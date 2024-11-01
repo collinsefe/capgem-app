@@ -1,0 +1,33 @@
+stages:
+  - restore
+  - test
+  - publish
+  - deploy
+
+# Restore .NET dependencies
+restore:
+  stage: restore
+  script:
+    - dotnet restore
+
+# Test .NET application
+test:
+  stage: test
+  script:
+    - dotnet test
+
+# Publish .NET application
+publish:
+  stage: publish
+  script:
+    - dotnet publish -c Release -o out
+  artifacts:
+    paths:
+      - out/
+
+# Deploy to Docker
+deploy:
+  stage: deploy
+  script:
+    - docker build -t registry.gitlab.com/blue-harvest-assignments/cloud-assignment .
+    - docker push registry.gitlab.com/blue-harvest-assignments/cloud-assignment
