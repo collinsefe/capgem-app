@@ -4,7 +4,7 @@ phases:
   install:
     commands:
       - echo "Installing test dependencies..."
-      - ./gradlew test  # Adjust if using npm or Maven
+      - ./gradlew test  # Adjust if using npm or Maven or Java
   build:
     commands:
       - echo "Running tests..."
